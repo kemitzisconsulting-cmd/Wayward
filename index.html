@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0e1d1b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Wayward">
+<title>Wayward</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;600&display=swap">
+<style>
+/* One screen: destination up top, a brass needle in the middle, distance below. Built for the street, so it stays dark. */
+:root{
+  --ink:#0e1d1b; --ink-2:#152b28; --line:#2a4842; --paper:#ece4d2; --muted:#8fa59e;
+  --brass:#e0a84a; --brass-deep:#8f6020; --warm:#f08a5d; --cold:#7fb7d9;
+  --display:'Big Shoulders Display','Arial Narrow',Impact,sans-serif;
+  --mono:'DM Mono',ui-monospace,Menlo,Consolas,monospace;
+  --body:'DM Sans',system-ui,-apple-system,Segoe UI,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:radial-gradient(120% 70% at 50% 42%,var(--ink-2) 0%,var(--ink) 70%);
+  background-color:var(--ink); color:var(--paper); font-family:var(--body);
+  display:grid; grid-template-rows:auto 1fr auto; overflow:hidden;
+  padding-top:max(14px,env(safe-area-inset-top,0px));
+  padding-bottom:max(16px,env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent; user-select:none;
+}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--brass);outline-offset:3px}
+.label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.dest{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;text-align:left;padding:4px 0}
+.dest-name{font-family:var(--display);font-weight:800;font-size:26px;line-height:1;letter-spacing:.01em;text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70vw}
+.dest-name .chev{color:var(--brass);font-size:.7em;margin-left:6px}
+.wordmark{font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--brass);text-transform:uppercase}
+
+main{display:grid;place-items:center;min-height:0;position:relative}
+.dial{width:min(88vw,52vh,420px);aspect-ratio:1;max-width:100%}
+.dial svg{width:100%;height:100%;display:block;overflow:visible}
+.status{position:absolute;bottom:2px;left:0;right:0;text-align:center}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:7px 14px;
+  font-family:var(--mono);font-size:12px;color:var(--paper);background:rgba(14,29,27,.7)}
+.chip.action{border-color:var(--brass);color:var(--brass)}
+
+footer{display:flex;flex-direction:column;gap:14px;align-items:center}
+.readout{display:flex;flex-direction:column;align-items:center;gap:6px}
+.dist{font-family:var(--display);font-weight:800;font-size:clamp(64px,20vw,112px);line-height:.85;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.dist small{font-size:.38em;font-weight:500;color:var(--muted);margin-left:6px;letter-spacing:.04em}
+.sub{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.sub b{color:var(--paper);font-weight:500}
+.trend{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;min-height:1.2em}
+.trend.warm{color:var(--warm)} .trend.cold{color:var(--cold)}
+.tools{display:flex;gap:10px;width:100%;max-width:420px}
+.tools button{flex:1;border:1px solid var(--line);border-radius:14px;padding:13px 8px;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.tools button:active{background:var(--ink-2)}
+.tools .primary{border-color:var(--brass);color:var(--brass)}
+
+body.arrived .dist{color:var(--brass)}
+
+/* Sheet */
+.sheet-wrap{position:fixed;inset:0;background:rgba(5,12,11,.6);display:flex;align-items:flex-end;z-index:10}
+.sheet{width:100%;max-height:86%;overflow:auto;background:var(--ink-2);border-top:1px solid var(--line);border-radius:22px 22px 0 0;
+  padding-top:18px;padding-bottom:max(20px,env(safe-area-inset-bottom,0px));
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:14px;user-select:text}
+.sheet h2{margin:0;font-family:var(--display);font-weight:800;font-size:30px;text-transform:uppercase;letter-spacing:.01em}
+.sheet p{margin:0;color:var(--muted);font-size:14px;line-height:1.45;max-width:60ch}
+.search{display:flex;gap:8px}
+.search input{flex:1;min-width:0;background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:13px 14px;color:var(--paper);font:16px var(--body)}
+.search button{border:1px solid var(--brass);color:var(--brass);border-radius:12px;padding:0 16px;font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.row .pick{flex:1;min-width:0;text-align:left;padding:13px 0;display:flex;flex-direction:column;gap:3px}
+.row .t{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .d{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .km{font-family:var(--mono);font-size:12px;color:var(--brass);white-space:nowrap}
+.row .x{color:var(--muted);font-size:20px;padding:8px 4px 8px 10px}
+.msg{font-family:var(--mono);font-size:12px;color:var(--muted);padding:6px 0}
+.close{align-self:flex-end;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:-6px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 150px);z-index:20}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="dest" id="destBtn" aria-label="Choose destination">
+    <span class="label">Heading to</span>
+    <span class="dest-name" id="destName">Pick a place<span class="chev">▾</span></span>
+  </button>
+  <span class="wordmark">Wayward</span>
+</header>
+
+<main>
+  <div class="dial">
+    <svg viewBox="-160 -160 320 320" aria-hidden="true">
+      <defs>
+        <radialGradient id="face" r="1">
+          <stop offset="0" stop-color="#1b3531"/><stop offset="1" stop-color="#10221f"/>
+        </radialGradient>
+        <linearGradient id="brassL" x1="0" x2="1"><stop offset="0" stop-color="#f3c870"/><stop offset=".5" stop-color="#e0a84a"/><stop offset=".5" stop-color="#b9822f"/><stop offset="1" stop-color="#8f6020"/></linearGradient>
+      </defs>
+      <circle r="150" fill="url(#face)" stroke="#2a4842" stroke-width="1.5"/>
+      <circle r="104" fill="none" stroke="#2a4842" stroke-width="1" stroke-dasharray="2 6"/>
+      <g id="rose"></g>
+      <!-- fixed lubber mark: the way your phone is pointing -->
+      <path d="M0,-158 L-7,-146 L7,-146 Z" fill="#ece4d2"/>
+      <g id="needle">
+        <path d="M0,-128 L11,-8 L0,6 L-11,-8 Z" fill="url(#brassL)"/>
+        <path d="M0,62 L7,4 L0,-4 L-7,4 Z" fill="#2a4842"/>
+        <circle r="10" fill="#0e1d1b" stroke="#e0a84a" stroke-width="2.5"/>
+        <circle r="3" fill="#e0a84a"/>
+      </g>
+    </svg>
+  </div>
+  <div class="status"><button class="chip" id="statusChip">Finding you…</button></div>
+</main>
+
+<footer>
+  <div class="readout">
+    <div class="dist" id="dist" aria-live="polite">—</div>
+    <div class="sub"><span><b id="card">—</b> <span id="deg"></span></span><span id="eta"></span><span id="acc"></span></div>
+    <div class="trend" id="trend"></div>
+  </div>
+  <div class="tools">
+    <button id="markBtn">Mark this spot</button>
+    <button id="unitBtn">km</button>
+    <button class="primary" id="goBtn">Where to?</button>
+  </div>
+</footer>
+
+<div class="sheet-wrap" id="sheet" hidden>
+  <div class="sheet" role="dialog" aria-labelledby="sheetTitle">
+    <button class="close" id="closeSheet">Close</button>
+    <h2 id="sheetTitle">Where to?</h2>
+    <p>Search a place, an address, or paste coordinates like <span style="font-family:var(--mono)">48.8606, 2.3376</span>. You get a direction and a distance. The streets are up to you.</p>
+    <form class="search" id="searchForm" autocomplete="off">
+      <input id="q" type="search" placeholder="Café, landmark, address…" enterkeyhint="search">
+      <button type="submit">Find</button>
+    </form>
+    <div class="list" id="results"></div>
+    <span class="label" id="savedLabel">Saved spots</span>
+    <div class="list" id="saved"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden><span class="chip action" id="toastText"></span></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const R = 6371000, rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
+  const store = {
+    get(k, f){ try{ const v = localStorage.getItem('wayward.'+k); return v ? JSON.parse(v) : f }catch(e){ return f } },
+    set(k, v){ try{ localStorage.setItem('wayward.'+k, JSON.stringify(v)) }catch(e){} }
+  };
+
+  let here = null, acc = null, gpsCourse = null, speed = 0;
+  let heading = null, headingAt = 0, compassAsked = false, compassListening = false;
+  let dest = store.get('dest', null);
+  let saved = store.get('saved', []);
+  let units = store.get('units', 'km');
+  let trendRef = null, trendTxt = '', trendCls = '';
+
+  // ---------- geometry ----------
+  function distance(a, b){
+    const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+    const h = Math.sin(dLat/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLon/2)**2;
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+  function bearing(a, b){
+    const y = Math.sin(rad(b.lon - a.lon)) * Math.cos(rad(b.lat));
+    const x = Math.cos(rad(a.lat))*Math.sin(rad(b.lat)) - Math.sin(rad(a.lat))*Math.cos(rad(b.lat))*Math.cos(rad(b.lon - a.lon));
+    return (deg(Math.atan2(y, x)) + 360) % 360;
+  }
+  const POINTS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  const cardinal = b => POINTS[Math.round(b / 22.5) % 16];
+  function fmt(m){
+    if (units === 'mi'){
+      const ft = m * 3.28084;
+      if (ft < 1000) return [String(Math.max(50, Math.round(ft/50)*50)), 'ft'];
+      const mi = m / 1609.344;
+      return [mi < 10 ? mi.toFixed(1) : Math.round(mi).toLocaleString(), 'mi'];
+    }
+    if (m < 1000) return [String(Math.max(10, Math.round(m/10)*10)), 'm'];
+    const km = m / 1000;
+    return [km < 10 ? km.toFixed(1) : Math.round(km).toLocaleString(), 'km'];
+  }
+  function fmtShort(m){ const [v,u] = fmt(m); return v + ' ' + u }
+
+  // ---------- dial ----------
+  (function buildRose(){
+    const g = $('rose'), ns = 'http://www.w3.org/2000/svg';
+    for (let a = 0; a < 360; a += 5){
+      const major = a % 30 === 0, l = document.createElementNS(ns, 'line');
+      const r1 = 146, r2 = major ? 128 : (a % 15 === 0 ? 136 : 140);
+      const s = Math.sin(rad(a)), c = -Math.cos(rad(a));
+      l.setAttribute('x1', r1*s); l.setAttribute('y1', r1*c); l.setAttribute('x2', r2*s); l.setAttribute('y2', r2*c);
+      l.setAttribute('stroke', major ? '#ece4d2' : '#4e6d66'); l.setAttribute('stroke-width', major ? 2 : 1);
+      g.appendChild(l);
+      if (major && a % 90 !== 0){
+        const t = document.createElementNS(ns, 'text');
+        t.setAttribute('x', 114*s); t.setAttribute('y', 114*c + 3.5);
+        t.setAttribute('text-anchor','middle'); t.setAttribute('fill','#8fa59e');
+        t.setAttribute('font-family','DM Mono, monospace'); t.setAttribute('font-size','10');
+        t.setAttribute('transform', `rotate(${a} ${114*s} ${114*c})`);
+        t.textContent = a; g.appendChild(t);
+      }
+    }
+    [['N',0],['E',90],['S',180],['W',270]].forEach(([n,a]) => {
+      const t = document.createElementNS(ns, 'text'), s = Math.sin(rad(a)), c = -Math.cos(rad(a));
+      t.setAttribute('x', 112*s); t.setAttribute('y', 112*c + 8);
+      t.setAttribute('text-anchor','middle'); t.setAttribute('font-family',"'Big Shoulders Display', 'Arial Narrow', sans-serif");
+      t.setAttribute('font-weight','800'); t.setAttribute('font-size', n === 'N' ? 26 : 20);
+      t.setAttribute('fill', n === 'N' ? '#f08a5d' : '#ece4d2');
+      t.setAttribute('transform', `rotate(${a} ${112*s} ${112*c})`);
+      t.textContent = n; g.appendChild(t);
+    });
+  })();
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let roseDisp = 0, needleDisp = 0, roseTarget = 0, needleTarget = 0;
+  const shortest = (to, from) => ((to - from) % 360 + 540) % 360 - 180;
+  (function tick(){
+    const k = reduce ? 1 : 0.14;
+    roseDisp += shortest(roseTarget, roseDisp) * k;
+    needleDisp += shortest(needleTarget, needleDisp) * k;
+    $('rose').setAttribute('transform', `rotate(${roseDisp})`);
+    $('needle').setAttribute('transform', `rotate(${needleDisp})`);
+    requestAnimationFrame(tick);
+  })();
+
+  // ---------- compass ----------
+  function onOrient(e){
+    let h = null;
+    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) h = e.webkitCompassHeading;
+    else if ((e.absolute || e.type === 'deviceorientationabsolute') && e.alpha != null) h = 360 - e.alpha;
+    if (h == null) return;
+    const so = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+    h = (h + so + 360) % 360;
+    heading = heading == null ? h : (heading + shortest(h, heading) * 0.35 + 360) % 360;
+    headingAt = Date.now();
+    render();
+  }
+  function listenCompass(){
+    if (compassListening) return;
+    compassListening = true;
+    if ('ondeviceorientationabsolute' in window) addEventListener('deviceorientationabsolute', onOrient);
+    else addEventListener('deviceorientation', onOrient);
+  }
+  const needsPermission = typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function';
+  async function askCompass(){
+    compassAsked = true;
+    if (needsPermission){
+      try{ if (await DeviceOrientationEvent.requestPermission() === 'granted') listenCompass() }catch(e){}
+    } else listenCompass();
+    requestWake();
+    render();
+  }
+  if (!needsPermission) listenCompass();
+  const hasCompass = () => heading != null && Date.now() - headingAt < 3000;
+
+  // ---------- location ----------
+  function startGeo(){
+    if (!('geolocation' in navigator)){ setStatus('This browser can’t share location'); return }
+    navigator.geolocation.watchPosition(p => {
+      here = { lat: p.coords.latitude, lon: p.coords.longitude };
+      acc = p.coords.accuracy; speed = p.coords.speed || 0;
+      gpsCourse = (p.coords.heading != null && !isNaN(p.coords.heading) && speed > 0.8) ? p.coords.heading : null;
+      render();
+    }, err => {
+      setStatus(err.code === 1 ? 'Location is blocked. Allow it in your browser settings.' : 'Can’t find you yet. Step outside?');
+    }, { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 });
+  }
+
+  // ---------- wake lock ----------
+  let wake = null;
+  async function requestWake(){
+    try{ if ('wakeLock' in navigator && !wake){ wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => wake = null) } }catch(e){}
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && compassAsked) requestWake() });
+
+  // ---------- render ----------
+  let statusOverride = null;
+  function setStatus(t){ statusOverride = t; render() }
+
+  function render(){
+    $('unitBtn').textContent = units === 'km' ? 'km' : 'miles';
+    const nameEl = $('destName');
+    nameEl.firstChild.nodeValue = dest ? dest.name : 'Pick a place';
+
+    const chip = $('statusChip');
+    chip.classList.remove('action');
+    chip.onclick = null;
+
+    let h = hasCompass() ? heading : gpsCourse;
+    if (needsPermission && !compassAsked){
+      chip.textContent = 'Tap to turn on the compass';
+      chip.classList.add('action'); chip.onclick = askCompass;
+    } else if (statusOverride && !here){
+      chip.textContent = statusOverride;
+    } else if (!here){
+      chip.textContent = 'Finding you…';
+    } else if (hasCompass()){
+      chip.textContent = 'Point the top of your phone where the needle goes';
+    } else if (gpsCourse != null){
+      chip.textContent = 'No compass. Steering by your walking direction';
+    } else {
+      chip.textContent = 'No compass. North is up, start walking';
+    }
+
+    roseTarget = h == null ? 0 : -h;
+
+    if (!here || !dest){
+      $('dist').innerHTML = '—';
+      $('card').textContent = '—'; $('deg').textContent = ''; $('eta').textContent = ''; $('trend').textContent = '';
+      $('acc').textContent = here && acc ? `GPS ±${Math.round(acc)} m` : '';
+      needleTarget = roseTarget;
+      document.body.classList.remove('arrived');
+      return;
+    }
+
+    const d = distance(here, dest), b = bearing(here, dest);
+    needleTarget = b - (h == null ? 0 : h);
+    const arrived = d <= Math.max(25, Math.min(acc || 0, 60));
+    document.body.classList.toggle('arrived', arrived);
+
+    if (arrived){
+      $('dist').innerHTML = 'Here';
+      $('card').textContent = 'You found it'; $('deg').textContent = ''; $('eta').textContent = '';
+    } else {
+      const [v, u] = fmt(d);
+      $('dist').innerHTML = `${v}<small>${u}</small>`;
+      $('card').textContent = cardinal(b);
+      $('deg').textContent = Math.round(b) + '°';
+      const mins = Math.round(d / 1.35 / 60);
+      $('eta').textContent = mins < 1 ? '' : mins < 90 ? `~${mins} min, crow-flies` : `~${(mins/60).toFixed(1)} h, crow-flies`;
+    }
+    $('acc').textContent = acc ? `±${Math.round(acc)} m` : '';
+
+    // warmer / colder against a reference point that resets every ~20 m of progress
+    if (trendRef == null || trendRef.key !== dest.lat + ',' + dest.lon) trendRef = { key: dest.lat + ',' + dest.lon, d };
+    const delta = d - trendRef.d;
+    if (Math.abs(delta) > 20){
+      trendTxt = delta < 0 ? 'Getting warmer' : 'Getting colder';
+      trendCls = delta < 0 ? 'warm' : 'cold';
+      trendRef.d = d;
+    }
+    const tr = $('trend');
+    tr.textContent = arrived ? '' : trendTxt; tr.className = 'trend ' + trendCls;
+  }
+  setInterval(render, 1500);
+
+  // ---------- destinations ----------
+  function setDest(p){
+    dest = { name: p.name, lat: +p.lat, lon: +p.lon };
+    store.set('dest', dest); trendRef = null; trendTxt = '';
+    closeSheet(); render();
+    if (needsPermission && !compassAsked) askCompass(); else requestWake();
+  }
+  function toast(t){
+    $('toastText').textContent = t; $('toast').hidden = false;
+    clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').hidden = true, 2200);
+  }
+
+  function rowEl(item, onPick, onDelete){
+    const r = document.createElement('div'); r.className = 'row';
+    const b = document.createElement('button'); b.className = 'pick'; b.type = 'button';
+    const t = document.createElement('span'); t.className = 't'; t.textContent = item.name;
+    const d = document.createElement('span'); d.className = 'd'; d.textContent = item.detail || `${(+item.lat).toFixed(4)}, ${(+item.lon).toFixed(4)}`;
+    b.append(t, d); b.onclick = onPick; r.appendChild(b);
+    if (here){
+      const k = document.createElement('span'); k.className = 'km';
+      k.textContent = fmtShort(distance(here, { lat: +item.lat, lon: +item.lon })) + ' ' + cardinal(bearing(here, { lat: +item.lat, lon: +item.lon }));
+      r.appendChild(k);
+    }
+    if (onDelete){
+      const x = document.createElement('button'); x.className = 'x'; x.type = 'button'; x.textContent = '×';
+      x.setAttribute('aria-label', 'Remove ' + item.name); x.onclick = onDelete; r.appendChild(x);
+    }
+    return r;
+  }
+
+  function renderSaved(){
+    const box = $('saved'); box.innerHTML = '';
+    $('savedLabel').hidden = !saved.length;
+    saved.forEach((s, i) => box.appendChild(rowEl(s, () => setDest(s), () => {
+      saved.splice(i, 1); store.set('saved', saved); renderSaved();
+    })));
+  }
+
+  function openSheet(){ $('sheet').hidden = false; $('results').innerHTML = ''; renderSaved(); setTimeout(() => $('q').focus(), 60) }
+  function closeSheet(){ $('sheet').hidden = true }
+
+  $('searchForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const q = $('q').value.trim(), box = $('results');
+    if (!q) return;
+    const m = q.match(/^\s*(-?\d+(?:\.\d+)?)\s*[,\s]\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (m && Math.abs(+m[1]) <= 90 && Math.abs(+m[2]) <= 180){
+      setDest({ name: `${(+m[1]).toFixed(4)}, ${(+m[2]).toFixed(4)}`, lat: +m[1], lon: +m[2] }); return;
+    }
+    box.innerHTML = '<div class="msg">Searching…</div>';
+    let url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&q=' + encodeURIComponent(q);
+    if (here) url += `&viewbox=${here.lon-0.3},${here.lat+0.3},${here.lon+0.3},${here.lat-0.3}`;
+    try{
+      const res = await fetch(url, { headers: { 'Accept-Language': navigator.language || 'en' } });
+      const list = await res.json();
+      box.innerHTML = '';
+      if (!list.length){ box.innerHTML = '<div class="msg">Nothing found. Try adding the city name.</div>'; return }
+      if (here) list.sort((a, b) => distance(here, {lat:+a.lat,lon:+a.lon}) - distance(here, {lat:+b.lat,lon:+b.lon}));
+      list.forEach(p => {
+        const parts = p.display_name.split(', ');
+        const item = { name: p.name || parts[0], detail: parts.slice(1, 4).join(', '), lat: p.lat, lon: p.lon };
+        box.appendChild(rowEl(item, () => {
+          if (!saved.some(s => Math.abs(s.lat - item.lat) < 1e-5 && Math.abs(s.lon - item.lon) < 1e-5)){
+            saved.unshift({ name: item.name, detail: item.detail, lat: +item.lat, lon: +item.lon });
+            saved = saved.slice(0, 20); store.set('saved', saved);
+          }
+          setDest(item);
+        }));
+      });
+    }catch(err){
+      box.innerHTML = '<div class="msg">Search needs a connection. Coordinates still work offline.</div>';
+    }
+  });
+
+  $('destBtn').onclick = openSheet;
+  $('goBtn').onclick = openSheet;
+  $('closeSheet').onclick = closeSheet;
+  $('sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeSheet() });
+  $('unitBtn').onclick = () => { units = units === 'km' ? 'mi' : 'km'; store.set('units', units); render() };
+  $('markBtn').onclick = () => {
+    if (!here){ toast('Still finding you'); return }
+    const t = new Date();
+    const spot = { name: 'Spot ' + t.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), detail: 'Marked ' + t.toLocaleDateString(), lat: here.lat, lon: here.lon };
+    saved.unshift(spot); saved = saved.slice(0, 20); store.set('saved', saved);
+    toast('Marked. Find it later under Where to?');
+  };
+
+  startGeo();
+  render();
+  if (!dest) openSheet();
+})();
+</script>
+</body>
+</html>
